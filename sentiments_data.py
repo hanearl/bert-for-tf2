@@ -1,3 +1,5 @@
+import numpy as np
+
 class SentimentsData:
     def __init__(self, df, tokenizer, max_seq_len):
         self.max_seq_len = max_seq_len
@@ -20,6 +22,7 @@ class SentimentsData:
             return sequence
 
         self.df.sentence = self.df.sentence.map(processing)
+        self.train_x = np.array(self.df.sentence.map(np.array))
 
     def get_label(self):
         sentiment_list = set()
@@ -39,6 +42,7 @@ class SentimentsData:
         def mapping(sentiments):
             return [senti_to_code.get(x, 'unk') for x in sentiments]
         self.df.label = self.df.sentiments.map(mapping)
+        self.train_y = np.array(self.df.sentiments.map(np.array))
 
     def _tokenize(self, string):
         return self.tokenizer.tokenize(string)

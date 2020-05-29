@@ -84,6 +84,7 @@ class PreprocessTestCase(unittest.TestCase):
     def test_whole_data_inserted(self):
         expect = self.index_result[:-1]
         result = self.sentiment_data.df.sentence[0][:len(expect)]
+        print(self.sentiment_data.train_x)
         self.assertEqual(expect, result)
 
     def test_sentiments_to_numberic_code(self):
@@ -92,9 +93,14 @@ class PreprocessTestCase(unittest.TestCase):
         label = senti_data.df.label
         print(label)
 
-    @unittest.skip
+    # @unittest.skip
     def test_split_train_valid_test_dataset(self):
-        pass
+        from sentiments_data import SentimentsData
+        import pandas as pd
+        df = pd.read_csv('sentiments.csv')
+        data = SentimentsData(df, self.tokenizer, 128)
+        print(data.train_x.shape)
+        print(data.train_y.shape)
 
 if __name__ == '__main__':
     unittest.main()
