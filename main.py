@@ -59,6 +59,8 @@ def create_learning_rate_scheduler(max_learn_rate=5e-5,
 from bert import BertModelLayer
 from bert.loader import StockBertConfig, map_stock_config_to_params, load_stock_weights
 from bert.tokenization.bert_tokenization import FullTokenizer
+from custom_metrics import MultiLabelAccuracy
+
 def create_model(max_seq_len, adapter_size=64):
     """Creates a classification model."""
 
@@ -95,16 +97,26 @@ def create_model(max_seq_len, adapter_size=64):
     if adapter_size is not None:
         freeze_bert_layers(bert)
 
-    def my_loss(pred, true):
+    def loss_test_1(true, pred):
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
+        loss = tf.reduce_sum(loss)
+        return loss
+
+    def loss_test_2(true, pred):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
         loss = tf.reduce_mean(tf.reduce_sum(loss))
         return loss
 
+    bce = tf.keras.losses.BinaryCrossentropy()
+    def loss_test_3(true, pred):
+        loss = bce(true, pred)
+        loss = tf.reduce_mean(tf.reduce_sum(loss))
+        return loss
+
     model.compile(optimizer=keras.optimizers.Adam(),
-                  # loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                  loss=my_loss,
+                  loss=loss_test_1,
                   # metrics=[keras.metrics.SparseCategoricalAccuracy(name="acc")])
-                  metrics=[])
+                  metrics=[MultiLabelAccuracy()])
 
     model.summary()
 
@@ -179,9 +191,9 @@ model.fit(x=data.train_x, y=train_y,
           epochs=total_epoch_count,
           callbacks=[create_learning_rate_scheduler(max_learn_rate=1e-5,
                                                     end_learn_rate=1e-7,
-                                                    warmup_epoch_count=20,
+                                                    warmup_epoch_count=3,
                                                     total_epoch_count=total_epoch_count),
                      keras.callbacks.EarlyStopping(patience=20, restore_best_weights=True),
                      tensorboard_callback, MyCustomCallback()])
 
-model.save_weights('./movie_reviews.h5', overwrite=True)
+model.save_weights('./my_models/sentiments_fin.h5', overwrite=True)
