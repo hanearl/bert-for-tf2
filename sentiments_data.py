@@ -1,4 +1,6 @@
 import numpy as np
+import tensorflow as tf
+
 
 class SentimentsData:
     def __init__(self, df, tokenizer, max_seq_len):
@@ -41,7 +43,15 @@ class SentimentsData:
         def mapping(sentiments):
             return [self.senti_to_code.get(x, 'unk') for x in sentiments]
         self.df.label = self.df.sentiments.map(mapping)
-        self.train_y = self.df.label.tolist()
+
+        num_class = 34
+        self.train_y = []
+        for y in self.df.label.tolist():
+            res = [0] * num_class
+            for num in y:
+                res[num] = 1
+            self.train_y.append(np.array(res))
+        self.train_y = tf.cast(np.array(self.train_y), dtype=tf.float32)
 
     def _tokenize(self, string):
         return self.tokenizer.tokenize(string)

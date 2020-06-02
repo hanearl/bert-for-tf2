@@ -1,5 +1,19 @@
-import bert
 import os
+import datetime
+import pickle
+import math
+
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+
+import bert
+from bert import BertModelLayer
+from bert.loader import StockBertConfig, map_stock_config_to_params, load_stock_weights
+from bert.tokenization.bert_tokenization import FullTokenizer
+
+from custom_metrics import MultiLabelAccuracy
 
 model_name = "multi_cased_L-12_H-768_A-12"
 model_dir = bert.fetch_google_bert_model(model_name, ".model")
@@ -16,9 +30,10 @@ bert_ckpt_dir = "/home/hanearl/Desktop/bert_for_tf2/model/multi_cased_L-12_H-768
 bert_ckpt_file = os.path.join(bert_ckpt_dir, "bert_model.ckpt")
 bert_config_file = os.path.join(bert_ckpt_dir, "bert_config.json")
 
-from tensorflow import keras
-import math
-import tensorflow as tf
+with open("sentiments.pkl", "rb") as f:
+    data = pickle.load(f)
+df = pd.read_csv('sentiments.csv')
+
 
 def flatten_layers(root_layer):
     if isinstance(root_layer, keras.layers.Layer):
@@ -56,10 +71,33 @@ def create_learning_rate_scheduler(max_learn_rate=5e-5,
     return learning_rate_scheduler
 
 
-from bert import BertModelLayer
-from bert.loader import StockBertConfig, map_stock_config_to_params, load_stock_weights
-from bert.tokenization.bert_tokenization import FullTokenizer
-from custom_metrics import MultiLabelAccuracy
+class MyCustomCallback(tf.keras.callbacks.Callback):
+    def __init__(self):
+        self.pred_sentences = [df.sentence[i] for i in range(10, 20)]
+        self.pred_sentiments = [df.sentiments[i] for i in range(10, 20)]
+
+    def on_epoch_end(self, epoch, logs=None):
+    # def on_batch_end(self, epoch, logs=None):
+        self.model.save_weights('./my_models/sentiments_{}.h5'.format(epoch), overwrite=True)
+        pred_sentences = self.pred_sentences
+        pred_tokens = map(tokenizer.tokenize, pred_sentences)
+        pred_tokens = map(lambda tok: ["[CLS]"] + tok + ["[SEP]"], pred_tokens)
+        pred_token_ids = list(map(tokenizer.convert_tokens_to_ids, pred_tokens))
+
+        pred_token_ids = map(lambda tids: tids + [0] * (128 - len(tids)), pred_token_ids)
+        pred_token_ids = np.array(list(pred_token_ids))
+
+        res = self.model.predict(pred_token_ids) > 0.5
+
+        res_string = ''
+        res_string += 'epoch: {}\n'.format(epoch)
+        for text, label, sentiment in zip(pred_sentences, self.pred_sentiments, res):
+            pred_sentiments = [data.code_to_senti[s-1] for s in sentiment * np.arange(1, 35) if s != 0]
+            res_string += "text: {}\nlabels: {}\nres: {}\n\n".format(text, label, pred_sentiments)
+
+        with open('./my_logs/epoch_res_{}.txt'.format(epoch), 'w') as f:
+            f.write(res_string)
+
 
 def create_model(max_seq_len, adapter_size=64):
     """Creates a classification model."""
@@ -115,76 +153,21 @@ def create_model(max_seq_len, adapter_size=64):
 
     model.compile(optimizer=keras.optimizers.Adam(),
                   loss=loss_test_1,
-                  # metrics=[keras.metrics.SparseCategoricalAccuracy(name="acc")])
                   metrics=[MultiLabelAccuracy()])
 
     model.summary()
 
     return model
 
-import datetime
-from sentiments_data import SentimentsData
-import pickle
-import pandas as pd
-with open("sentiments.pkl", "rb") as f:
-    data = pickle.load(f)
-# print(type(data))
-df = pd.read_csv('sentiments.csv')
-# data = SentimentsData(df, tokenizer, 128)
 
-train_tt = list(data.train_y)
-import numpy as np
-num_class = 34
-train_y = []
-for y in train_tt:
-    res = [0] * num_class
-    for num in y:
-        res[num] = 1
-    train_y.append(np.array(res))
-train_y = np.array(train_y)
-train_x = list(data.train_x)
-
-train_y = tf.cast(train_y, dtype=tf.float32)
-# print(train_x.shape)
 adapter_size = None # use None to fine-tune all of BERT
 model = create_model(data.max_seq_len, adapter_size=adapter_size)
 
 log_dir = ".log/movie_reviews/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%s")
 tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
 
-
-class MyCustomCallback(tf.keras.callbacks.Callback):
-    def __init__(self):
-        self.pred_sentences = [df.sentence[i] for i in range(10, 20)]
-        self.pred_sentiments = [df.sentiments[i] for i in range(10, 20)]
-
-    def on_epoch_end(self, epoch, logs=None):
-    # def on_batch_end(self, epoch, logs=None):
-        self.model.save_weights('./my_models/sentiments_{}.h5'.format(epoch), overwrite=True)
-        pred_sentences = self.pred_sentences
-        pred_tokens = map(tokenizer.tokenize, pred_sentences)
-        pred_tokens = map(lambda tok: ["[CLS]"] + tok + ["[SEP]"], pred_tokens)
-        pred_token_ids = list(map(tokenizer.convert_tokens_to_ids, pred_tokens))
-
-        pred_token_ids = map(lambda tids: tids + [0] * (128 - len(tids)), pred_token_ids)
-        pred_token_ids = np.array(list(pred_token_ids))
-
-        print('pred_token_ids', pred_token_ids.shape)
-
-        res = self.model.predict(pred_token_ids).argmax(axis=-1)
-
-        res_string = ''
-        res_string += 'epoch: {}\n'.format(epoch)
-        for text, label, sentiment in zip(pred_sentences, self.pred_sentiments, res):
-            res_string += "text: {}\nlabels: {}\nres: {}\n\n".format(text, label, data.code_to_senti[sentiment])
-
-        with open('./my_logs/epoch_res_{}.txt'.format(epoch), 'w') as f:
-            f.write(res_string)
-
-
 total_epoch_count = 20
-# model.fit(x=(data.train_x, data.train_x_token_types), y=data.train_y,
-model.fit(x=data.train_x, y=train_y,
+model.fit(x=data.train_x, y=data.train_y,
           validation_split=0.1,
           batch_size=32,
           shuffle=True,
