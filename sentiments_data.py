@@ -22,27 +22,26 @@ class SentimentsData:
             return sequence
 
         self.df.sentence = self.df.sentence.map(processing)
-        self.train_x = np.array(self.df.sentence.map(np.array))
+        self.train_x = np.array([np.array(x) for x in self.df.sentence.tolist()])
+
 
     def get_label(self):
         sentiment_list = set()
 
         def parse(sentiments):
-            """
-            side-effect : update sentiment_list
-            """
             sentiments = str(sentiments)[1:-1].split(",")
             sentiments = [senti.replace('\'', '').strip() for senti in sentiments]
             sentiment_list.update(set(sentiments))
             return sentiments
 
         self.df.sentiments = self.df.sentiments.map(parse)
-        senti_to_code = {senti: idx for idx, senti in enumerate(sentiment_list)}
+        self.senti_to_code = {senti: idx for idx, senti in enumerate(sentiment_list)}
+        self.code_to_senti = {code: senti for senti, code in self.senti_to_code.items()}
 
         def mapping(sentiments):
-            return [senti_to_code.get(x, 'unk') for x in sentiments]
+            return [self.senti_to_code.get(x, 'unk') for x in sentiments]
         self.df.label = self.df.sentiments.map(mapping)
-        self.train_y = np.array(self.df.sentiments.map(np.array))
+        self.train_y = self.df.label.tolist()
 
     def _tokenize(self, string):
         return self.tokenizer.tokenize(string)

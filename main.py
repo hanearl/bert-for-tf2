@@ -81,7 +81,7 @@ def create_model(max_seq_len, adapter_size=64):
     cls_out = keras.layers.Dropout(0.5)(cls_out)
     logits = keras.layers.Dense(units=768, activation="tanh")(cls_out)
     logits = keras.layers.Dropout(0.5)(logits)
-    logits = keras.layers.Dense(units=33, activation="softmax")(logits)
+    logits = keras.layers.Dense(units=34, activation="sigmoid")(logits)
 
     # model = keras.Model(inputs=[input_ids, token_type_ids], outputs=logits)
     # model.build(input_shape=[(None, max_seq_len), (None, max_seq_len)])
@@ -95,9 +95,16 @@ def create_model(max_seq_len, adapter_size=64):
     if adapter_size is not None:
         freeze_bert_layers(bert)
 
+    def my_loss(pred, true):
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
+        loss = tf.reduce_mean(tf.reduce_sum(loss))
+        return loss
+
     model.compile(optimizer=keras.optimizers.Adam(),
-                  loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                  metrics=[keras.metrics.SparseCategoricalAccuracy(name="acc")])
+                  # loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                  loss=my_loss,
+                  # metrics=[keras.metrics.SparseCategoricalAccuracy(name="acc")])
+                  metrics=[])
 
     model.summary()
 
@@ -105,21 +112,69 @@ def create_model(max_seq_len, adapter_size=64):
 
 import datetime
 from sentiments_data import SentimentsData
+import pickle
 import pandas as pd
+with open("sentiments.pkl", "rb") as f:
+    data = pickle.load(f)
+# print(type(data))
 df = pd.read_csv('sentiments.csv')
-data = SentimentsData(df, tokenizer, 128)
+# data = SentimentsData(df, tokenizer, 128)
 
+train_tt = list(data.train_y)
+import numpy as np
+num_class = 34
+train_y = []
+for y in train_tt:
+    res = [0] * num_class
+    for num in y:
+        res[num] = 1
+    train_y.append(np.array(res))
+train_y = np.array(train_y)
+train_x = list(data.train_x)
+
+train_y = tf.cast(train_y, dtype=tf.float32)
+# print(train_x.shape)
 adapter_size = None # use None to fine-tune all of BERT
 model = create_model(data.max_seq_len, adapter_size=adapter_size)
 
 log_dir = ".log/movie_reviews/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%s")
 tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
 
-total_epoch_count = 50
+
+class MyCustomCallback(tf.keras.callbacks.Callback):
+    def __init__(self):
+        self.pred_sentences = [df.sentence[i] for i in range(10, 20)]
+        self.pred_sentiments = [df.sentiments[i] for i in range(10, 20)]
+
+    def on_epoch_end(self, epoch, logs=None):
+    # def on_batch_end(self, epoch, logs=None):
+        self.model.save_weights('./my_models/sentiments_{}.h5'.format(epoch), overwrite=True)
+        pred_sentences = self.pred_sentences
+        pred_tokens = map(tokenizer.tokenize, pred_sentences)
+        pred_tokens = map(lambda tok: ["[CLS]"] + tok + ["[SEP]"], pred_tokens)
+        pred_token_ids = list(map(tokenizer.convert_tokens_to_ids, pred_tokens))
+
+        pred_token_ids = map(lambda tids: tids + [0] * (128 - len(tids)), pred_token_ids)
+        pred_token_ids = np.array(list(pred_token_ids))
+
+        print('pred_token_ids', pred_token_ids.shape)
+
+        res = self.model.predict(pred_token_ids).argmax(axis=-1)
+
+        res_string = ''
+        res_string += 'epoch: {}\n'.format(epoch)
+        for text, label, sentiment in zip(pred_sentences, self.pred_sentiments, res):
+            res_string += "text: {}\nlabels: {}\nres: {}\n\n".format(text, label, data.code_to_senti[sentiment])
+
+        with open('./my_logs/epoch_res_{}.txt'.format(epoch), 'w') as f:
+            f.write(res_string)
+
+
+total_epoch_count = 20
 # model.fit(x=(data.train_x, data.train_x_token_types), y=data.train_y,
-model.fit(x=data.train_x, y=data.train_y,
+model.fit(x=data.train_x, y=train_y,
           validation_split=0.1,
-          batch_size=16,
+          batch_size=32,
           shuffle=True,
           epochs=total_epoch_count,
           callbacks=[create_learning_rate_scheduler(max_learn_rate=1e-5,
@@ -127,6 +182,6 @@ model.fit(x=data.train_x, y=data.train_y,
                                                     warmup_epoch_count=20,
                                                     total_epoch_count=total_epoch_count),
                      keras.callbacks.EarlyStopping(patience=20, restore_best_weights=True),
-                     tensorboard_callback])
+                     tensorboard_callback, MyCustomCallback()])
 
 model.save_weights('./movie_reviews.h5', overwrite=True)
