@@ -2,6 +2,7 @@ import os
 import datetime
 import pickle
 import math
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,25 @@ from bert.loader import StockBertConfig, map_stock_config_to_params, load_stock_
 from bert.tokenization.bert_tokenization import FullTokenizer
 
 from custom_metrics import MultiLabelAccuracy
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--train_name', '-t', type=str, help='train session name', default='dummy')
+args = parser.parse_args()
+
+
+project_path = os.path.join("/home/hanearl/Desktop", "bert_for_tf2")
+epoch_log_path = os.path.join(project_path, "epoch_logs", args.train_name)
+epoch_model_path = os.path.join(project_path, "epoch_models", args.train_name)
+tb_path = os.path.join(project_path, "logs", args.train_name)
+
+if not os.path.isdir(epoch_log_path):
+    os.mkdir(epoch_log_path)
+
+if not os.path.isdir(epoch_model_path):
+    os.mkdir(epoch_model_path)
+
+if not os.path.isdir(tb_path):
+    os.mkdir(tb_path)
 
 model_name = "multi_cased_L-12_H-768_A-12"
 model_dir = bert.fetch_google_bert_model(model_name, ".model")
@@ -78,7 +98,7 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
     # def on_batch_end(self, epoch, logs=None):
-        self.model.save_weights('./my_models/sentiments_{}.h5'.format(epoch), overwrite=True)
+        self.model.save_weights(os.path.join(epoch_model_path, 'sentiments_{}.h5'.format(epoch)), overwrite=True)
         pred_sentences = self.pred_sentences
         pred_tokens = map(tokenizer.tokenize, pred_sentences)
         pred_tokens = map(lambda tok: ["[CLS]"] + tok + ["[SEP]"], pred_tokens)
@@ -95,7 +115,7 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
             pred_sentiments = [data.code_to_senti[s-1] for s in sentiment * np.arange(1, 35) if s != 0]
             res_string += "text: {}\nlabels: {}\nres: {}\n\n".format(text, label, pred_sentiments)
 
-        with open('./my_logs/epoch_res_{}.txt'.format(epoch), 'w') as f:
+        with open(os.path.join(epoch_log_path, 'epoch_res_{}.txt'.format(epoch)), 'w') as f:
             f.write(res_string)
 
 
@@ -152,7 +172,7 @@ def create_model(max_seq_len, adapter_size=64):
         return loss
 
     model.compile(optimizer=keras.optimizers.Adam(),
-                  loss=loss_test_1,
+                  loss=bce,
                   metrics=[MultiLabelAccuracy()])
 
     model.summary()
@@ -160,13 +180,14 @@ def create_model(max_seq_len, adapter_size=64):
     return model
 
 
-adapter_size = None # use None to fine-tune all of BERT
-model = create_model(data.max_seq_len, adapter_size=adapter_size)
 
-log_dir = ".log/movie_reviews/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%s")
+log_dir = os.path.join(tb_path, datetime.datetime.now().strftime("%Y%m%d-%H%M%s"))
 tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
 
+adapter_size = None # use None to fine-tune all of BERT
+model = create_model(data.max_seq_len, adapter_size=adapter_size)
 total_epoch_count = 20
+
 model.fit(x=data.train_x, y=data.train_y,
           validation_split=0.1,
           batch_size=32,
@@ -178,5 +199,3 @@ model.fit(x=data.train_x, y=data.train_y,
                                                     total_epoch_count=total_epoch_count),
                      keras.callbacks.EarlyStopping(patience=20, restore_best_weights=True),
                      tensorboard_callback, MyCustomCallback()])
-
-model.save_weights('./my_models/sentiments_fin.h5', overwrite=True)
