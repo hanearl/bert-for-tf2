@@ -141,7 +141,7 @@ def create_model(max_seq_len, adapter_size=64):
     cls_out = keras.layers.Dropout(0.5)(cls_out)
     logits = keras.layers.Dense(units=768, activation="tanh")(cls_out)
     logits = keras.layers.Dropout(0.5)(logits)
-    logits = keras.layers.Dense(units=34, activation="sigmoid")(logits)
+    logits = keras.layers.Dense(units=34)(logits)
 
     # model = keras.Model(inputs=[input_ids, token_type_ids], outputs=logits)
     # model.build(input_shape=[(None, max_seq_len), (None, max_seq_len)])
@@ -165,14 +165,9 @@ def create_model(max_seq_len, adapter_size=64):
         loss = tf.reduce_mean(tf.reduce_sum(loss))
         return loss
 
-    bce = tf.keras.losses.BinaryCrossentropy()
-    def loss_test_3(true, pred):
-        loss = bce(true, pred)
-        loss = tf.reduce_mean(tf.reduce_sum(loss))
-        return loss
 
     model.compile(optimizer=keras.optimizers.Adam(),
-                  loss=bce,
+                  loss=loss_test_1,
                   metrics=[MultiLabelAccuracy()])
 
     model.summary()
