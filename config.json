@@ -7,5 +7,6 @@
   "batch_size": 64,
   "warmup_epoch_count": 5,
   "loss_func": "sigmoid_cross_entropy_loss",
-  "initial_epoch": 0
+  "initial_epoch": 0,
+  "focal_gamma": 2
 }

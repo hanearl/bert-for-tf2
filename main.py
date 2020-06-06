@@ -179,7 +179,7 @@ def create_model(max_seq_len, adapter_size=64):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
         loss = tf.reduce_mean(tf.reduce_sum(loss))
         return loss
-    focal_loss = BinaryFocalLoss(gamma=1, from_logits=True)
+    focal_loss = BinaryFocalLoss(gamma=config['focal_gamma'], from_logits=True)
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_cross_entropy_loss,
@@ -207,7 +207,7 @@ model.fit(x=data.train_x, y=data.train_y,
           batch_size=config['batch_size'],
           shuffle=True,
           epochs=total_epoch_count,
-          initial_epoch=0,
+          initial_epoch=config['initial_epoch'],
           callbacks=[create_learning_rate_scheduler(max_learn_rate=1e-5,
                                                     end_learn_rate=1e-7,
                                                     warmup_epoch_count=config['warmup_epoch_count'],
