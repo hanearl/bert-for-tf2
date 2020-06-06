@@ -1,0 +1,10 @@
+{
+  "drive_path": "/content/drive/My Drive",
+  "train_name": "sigmoid_loss_many",
+  "model_name": "multi_cased_L-12_H-768_A-12",
+  "save_model_period": 5,
+  "num_epochs": 20,
+  "batch_size": 64,
+  "warmup_epoch_count": 5,
+  "loss_func": "sigmoid_cross_entropy_loss"
+}
