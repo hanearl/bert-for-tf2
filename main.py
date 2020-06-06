@@ -1,8 +1,9 @@
 import os
+import sys
 import datetime
 import pickle
 import math
-import argparse
+import json
 
 import numpy as np
 import pandas as pd
@@ -14,17 +15,22 @@ from bert import BertModelLayer
 from bert.loader import StockBertConfig, map_stock_config_to_params, load_stock_weights
 from bert.tokenization.bert_tokenization import FullTokenizer
 
-from custom_metrics import MultiLabelAccuracy
+from custom_metrics import MultiLabelAccuracy, MultiLabelPrecision,\
+                            MultiLabelRecall, MultiLabelF1, HammingLoss
+from sentiments_data import SentimentsData
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--train_name', '-t', type=str, help='train session name', default='dummy')
-args = parser.parse_args()
+with open('./config.json', 'r') as f:
+    config = json.load(f)
 
+drive_path = "/home/hanearl/Desktop"
+train_name = config["train_name"]
 
-project_path = os.path.join("/home/hanearl/Desktop", "bert_for_tf2")
-epoch_log_path = os.path.join(project_path, "epoch_logs", args.train_name)
-epoch_model_path = os.path.join(project_path, "epoch_models", args.train_name)
-tb_path = os.path.join(project_path, "logs", args.train_name)
+project_path = os.path.join(drive_path, "bert_sentiment")
+bert_model_path = os.path.join(project_path, "bert_model")
+data_path = os.path.join(project_path, "data")
+epoch_log_path = os.path.join(project_path, "epoch_logs", train_name)
+epoch_model_path = os.path.join(project_path, "epoch_models", train_name)
+tb_path = os.path.join(project_path, "logs", train_name)
 
 if not os.path.isdir(epoch_log_path):
     os.mkdir(epoch_log_path)
@@ -35,9 +41,9 @@ if not os.path.isdir(epoch_model_path):
 if not os.path.isdir(tb_path):
     os.mkdir(tb_path)
 
-model_name = "multi_cased_L-12_H-768_A-12"
+model_name = config['model_name']
 model_dir = bert.fetch_google_bert_model(model_name, ".model")
-model_ckpt = os.path.join(model_dir, "bert_model.ckpt")
+model_ckpt = os.path.join(bert_model_path, model_dir, "bert_model.ckpt")
 
 # Tokenize
 do_lower_case = not (model_name.find("cased") == 0 or model_name.find("multi_cased") == 0)
@@ -46,14 +52,13 @@ vocab_file = os.path.join(model_dir, "vocab.txt")
 tokenizer = bert.bert_tokenization.FullTokenizer(vocab_file, do_lower_case)
 
 # bert ckpt path
-bert_ckpt_dir = "/home/hanearl/Desktop/bert_for_tf2/model/multi_cased_L-12_H-768_A-12"
+bert_ckpt_dir = os.path.join(bert_model_path, "multi_cased_L-12_H-768_A-12")
 bert_ckpt_file = os.path.join(bert_ckpt_dir, "bert_model.ckpt")
 bert_config_file = os.path.join(bert_ckpt_dir, "bert_config.json")
 
-with open("sentiments.pkl", "rb") as f:
+with open(os.path.join(data_path, "sentiments.pkl"), "rb") as f:
     data = pickle.load(f)
-df = pd.read_csv('sentiments.csv')
-
+df = pd.read_csv(os.path.join(data_path, 'sentiments.csv'))
 
 def flatten_layers(root_layer):
     if isinstance(root_layer, keras.layers.Layer):
@@ -90,15 +95,16 @@ def create_learning_rate_scheduler(max_learn_rate=5e-5,
 
     return learning_rate_scheduler
 
-
 class MyCustomCallback(tf.keras.callbacks.Callback):
     def __init__(self):
         self.pred_sentences = [df.sentence[i] for i in range(10, 20)]
         self.pred_sentiments = [df.sentiments[i] for i in range(10, 20)]
 
     def on_epoch_end(self, epoch, logs=None):
-    # def on_batch_end(self, epoch, logs=None):
-        self.model.save_weights(os.path.join(epoch_model_path, 'sentiments_{}.h5'.format(epoch)), overwrite=True)
+    #def on_batch_end(self, epoch, logs=None):
+        epoch = epoch + 1
+        if epoch % config['save_model_period'] == 0:
+            self.model.save_weights(os.path.join(epoch_model_path, 'sentiments.h5'), overwrite=True)
         pred_sentences = self.pred_sentences
         pred_tokens = map(tokenizer.tokenize, pred_sentences)
         pred_tokens = map(lambda tok: ["[CLS]"] + tok + ["[SEP]"], pred_tokens)
@@ -107,10 +113,18 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
         pred_token_ids = map(lambda tids: tids + [0] * (128 - len(tids)), pred_token_ids)
         pred_token_ids = np.array(list(pred_token_ids))
 
-        res = self.model.predict(pred_token_ids) > 0.5
+        res = self.model.predict(pred_token_ids)
+        res = tf.sigmoid(res)
+        res = tf.cast(res > 0.5, dtype=tf.int32).numpy()
 
         res_string = ''
         res_string += 'epoch: {}\n'.format(epoch)
+        res_string += 'acc: {}, precision: {}, recall: {}, f1_score: {}, hamming_loss: {}\n'\
+                        .format(logs['multi_label_accuracy'],
+                                logs['multi_label_precision'],
+                                logs['multi_label_recall'],
+                                logs['multi_label_f1_score'],
+                                logs['hamming_loss'])
         for text, label, sentiment in zip(pred_sentences, self.pred_sentiments, res):
             pred_sentiments = [data.code_to_senti[s-1] for s in sentiment * np.arange(1, 35) if s != 0]
             res_string += "text: {}\nlabels: {}\nres: {}\n\n".format(text, label, pred_sentiments)
@@ -118,6 +132,10 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
         with open(os.path.join(epoch_log_path, 'epoch_res_{}.txt'.format(epoch)), 'w') as f:
             f.write(res_string)
 
+log_dir = os.path.join(tb_path, datetime.datetime.now().strftime("%Y%m%d-%H%M%s"))
+tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
+
+from focal_loss import BinaryFocalLoss
 
 def create_model(max_seq_len, adapter_size=64):
     """Creates a classification model."""
@@ -141,7 +159,7 @@ def create_model(max_seq_len, adapter_size=64):
     cls_out = keras.layers.Dropout(0.5)(cls_out)
     logits = keras.layers.Dense(units=768, activation="tanh")(cls_out)
     logits = keras.layers.Dropout(0.5)(logits)
-    logits = keras.layers.Dense(units=34, activation="sigmoid")(logits)
+    logits = keras.layers.Dense(units=34)(logits)
 
     # model = keras.Model(inputs=[input_ids, token_type_ids], outputs=logits)
     # model.build(input_shape=[(None, max_seq_len), (None, max_seq_len)])
@@ -155,47 +173,51 @@ def create_model(max_seq_len, adapter_size=64):
     if adapter_size is not None:
         freeze_bert_layers(bert)
 
-    def loss_test_1(true, pred):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
-        loss = tf.reduce_sum(loss)
-        return loss
 
-    def loss_test_2(true, pred):
+
+    def sigmoid_cross_entropy_loss(true, pred):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
         loss = tf.reduce_mean(tf.reduce_sum(loss))
         return loss
+    focal_loss = BinaryFocalLoss(gamma=1, from_logits=True)
 
-    bce = tf.keras.losses.BinaryCrossentropy()
-    def loss_test_3(true, pred):
-        loss = bce(true, pred)
-        loss = tf.reduce_mean(tf.reduce_sum(loss))
-        return loss
+    loss_func_list = {
+        "sigmoid_cross_entropy_loss": sigmoid_cross_entropy_loss,
+        "focal_loss": focal_loss
+    }
 
     model.compile(optimizer=keras.optimizers.Adam(),
-                  loss=bce,
-                  metrics=[MultiLabelAccuracy()])
+                  loss=loss_func_list[config['loss_func']],
+                  metrics=[MultiLabelAccuracy(batch_size=config['batch_size']),
+                           MultiLabelPrecision(batch_size=config['batch_size']),
+                           MultiLabelRecall(batch_size=config['batch_size']),
+                           MultiLabelF1(batch_size=config['batch_size']),
+                           HammingLoss(batch_size=config['batch_size'])])
 
     model.summary()
 
     return model
 
-
-
-log_dir = os.path.join(tb_path, datetime.datetime.now().strftime("%Y%m%d-%H%M%s"))
-tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
-
 adapter_size = None # use None to fine-tune all of BERT
 model = create_model(data.max_seq_len, adapter_size=adapter_size)
-total_epoch_count = 20
+total_epoch_count = config['num_epochs']
 
 model.fit(x=data.train_x, y=data.train_y,
           validation_split=0.1,
-          batch_size=32,
+          batch_size=config['batch_size'],
           shuffle=True,
           epochs=total_epoch_count,
+          initial_epoch=0,
           callbacks=[create_learning_rate_scheduler(max_learn_rate=1e-5,
                                                     end_learn_rate=1e-7,
-                                                    warmup_epoch_count=3,
+                                                    warmup_epoch_count=config['warmup_epoch_count'],
                                                     total_epoch_count=total_epoch_count),
                      keras.callbacks.EarlyStopping(patience=20, restore_best_weights=True),
+
                      tensorboard_callback, MyCustomCallback()])
+model.save_weights(os.path.join(epoch_model_path, 'sentiments_fin.h5'), overwrite=True)
+
+adapter_size = None # use None to fine-tune all of BERT
+model = create_model(data.max_seq_len, adapter_size=adapter_size)
+
+model.load_weights(os.path.join(epoch_model_path, 'sentiments_fin.h5'))
