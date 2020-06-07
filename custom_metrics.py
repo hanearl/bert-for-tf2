@@ -12,6 +12,7 @@ class MultiLabelAccuracy(keras.metrics.Metric):
     def update_state(self, y_true, y_pred, sample_weight=None):
         inter = tf.reduce_sum(tf.cast((y_pred > 0.5) & (y_true == 1), dtype=tf.float32))
         union = tf.reduce_sum(tf.cast((y_pred > 0.5) | (y_true == 1), dtype=tf.float32))
+        union += 1e-8
         accuracy = tf.reduce_sum(inter/union) / self.batch_size
         self.accuracy.assign_add(accuracy)
         self.num_iter.assign_add(1.0)
@@ -34,6 +35,7 @@ class MultiLabelPrecision(keras.metrics.Metric):
     def update_state(self, y_true, y_pred, sample_weight=None):
         inter = tf.reduce_sum(tf.cast((y_pred > 0.5) & (y_true == 1), dtype=tf.float32), axis=-1)
         pred_sum = tf.reduce_sum(tf.cast(y_pred > 0.5, dtype=tf.float32), axis=-1)
+        pred_sum += 1e-8
         precision = tf.reduce_sum(inter/pred_sum) / self.batch_size
         self.precision.assign_add(precision)
         self.num_iter.assign_add(1.0)
@@ -56,6 +58,7 @@ class MultiLabelRecall(keras.metrics.Metric):
     def update_state(self, y_true, y_pred, sample_weight=None):
         inter = tf.reduce_sum(tf.cast((y_pred > 0.5) & (y_true == 1), dtype=tf.float32), axis=-1)
         true_sum = tf.reduce_sum(tf.cast(y_true == 1, dtype=tf.float32), axis=-1)
+        true_sum += 1e-8
         recall = tf.reduce_sum(inter/true_sum) / self.batch_size
         self.recall.assign_add(recall)
         self.num_iter.assign_add(1.0)
@@ -79,7 +82,7 @@ class MultiLabelF1(keras.metrics.Metric):
         inter = tf.reduce_sum(tf.cast((y_pred > 0.5) & (y_true == 1), dtype=tf.float32), axis=-1)
         true_sum = tf.reduce_sum(tf.cast(y_true == 1, dtype=tf.float32), axis=-1)
         pred_sum = tf.reduce_sum(tf.cast(y_pred > 0.5, dtype=tf.float32), axis=-1)
-        f1_score = tf.reduce_sum((2 * inter) / (true_sum + pred_sum))
+        f1_score = tf.reduce_sum((2 * inter) / (true_sum + pred_sum + 1e-10))
         self.f1_score.assign_add(f1_score / self.batch_size)
         self.num_iter.assign_add(1.0)
 
