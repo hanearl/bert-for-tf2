@@ -1,5 +1,4 @@
 import os
-import json
 import math
 
 import tensorflow as tf
@@ -14,10 +13,7 @@ from metrics import MultiLabelAccuracy, MultiLabelPrecision,\
                             MultiLabelRecall, MultiLabelF1, HammingLoss
 from config import Config
 
-with open('./config.json', 'r') as f:
-    json_config = json.load(f)
-
-config = Config(json_config)
+config = Config()
 
 
 def flatten_layers(root_layer):
@@ -74,7 +70,7 @@ def create_model(max_seq_len, adapter_size=64):
     cls_out = keras.layers.Dropout(0.5)(cls_out)
     logits = keras.layers.Dense(units=768, activation="tanh")(cls_out)
     logits = keras.layers.Dropout(0.5)(logits)
-    logits = keras.layers.Dense(units=34)(logits)
+    logits = keras.layers.Dense(units=len(config.classes))(logits)
 
     model = keras.Model(inputs=input_ids, outputs=logits)
     model.build(input_shape=(None, max_seq_len))

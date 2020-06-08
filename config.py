@@ -1,19 +1,19 @@
 import os
+import json
 import bert
 
 
 class Config:
-    def __init__(self, config):
-        self.max_seq_len = config['max_seq_len']
-        self.focal_gamma = config['focal_gamma']
-        self.save_model_period = config['save_model_period']
-        self.loss_func = config['loss_func']
-        self.batch_size = config['batch_size']
-        self.warmup_epoch_count = config['warmup_epoch_count']
-        self.initial_epoch = config['initial_epoch']
-        self.num_epochs = config['num_epochs']
+    def __init__(self):
+        with open('./config.json', 'r') as f:
+            config = json.load(f)
+            for key, value in config.items():
+                self[key] = value
+
+        with open('./class.json', 'r') as f:
+            self.classes = json.load(f)
+
         self.drive_path = "/home/hanearl/Desktop"
-        self.train_name = config["train_name"]
 
         self.project_path = os.path.join(self.drive_path, "bert_sentiment")
         self.bert_model_path = os.path.join(self.project_path, "bert_model")
@@ -22,7 +22,6 @@ class Config:
         self.epoch_model_path = os.path.join(self.project_path, "epoch_models", self.train_name)
         self.tb_path = os.path.join(self.project_path, "logs", self.train_name)
 
-        self.model_name = config['model_name']
         self.model_dir = bert.fetch_google_bert_model(self.model_name, ".model")
         self.model_ckpt = os.path.join(self.bert_model_path, self.model_dir, "bert_model.ckpt")
 
@@ -31,4 +30,8 @@ class Config:
         self.bert_ckpt_file = os.path.join(self.bert_ckpt_dir, "bert_model.ckpt")
         self.bert_config_file = os.path.join(self.bert_ckpt_dir, "bert_config.json")
 
+    def __getitem__(self, key):
+        return getattr(self, key)
 
+    def __setitem__(self, key, value):
+        return setattr(self, key, value)

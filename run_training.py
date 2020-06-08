@@ -1,20 +1,15 @@
 import os
 import datetime
 import pickle
-import json
 
 from tensorflow import keras
 
 from create_model import create_model
 from create_model import create_learning_rate_scheduler
 from callback import MyCustomCallback
-from sentiments_data import SentimentsData
 from config import Config
 
-with open('./config.json', 'r') as f:
-    json_config = json.load(f)
-
-config = Config(json_config)
+config = Config()
 
 if not os.path.isdir(config.epoch_log_path):
     os.mkdir(config.epoch_log_path)
@@ -25,16 +20,16 @@ if not os.path.isdir(config.epoch_model_path):
 if not os.path.isdir(config.tb_path):
     os.mkdir(config.tb_path)
 
-with open(os.path.join(config.data_path, "sentiments.pkl"), "rb") as f:
-    data = pickle.load(f)
+with open(os.path.join(config.data_path, "train_set.pkl"), "rb") as f:
+    (train_x, train_y) = pickle.load(f)
 
 log_dir = os.path.join(config.tb_path, datetime.datetime.now().strftime("%Y%m%d-%H%M%s"))
 tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
 
 adapter_size = None # use None to fine-tune all of BERT
-model = create_model(data.max_seq_len, adapter_size=adapter_size)
+model = create_model(config.max_seq_len, adapter_size=adapter_size)
 
-model.fit(x=data.train_x, y=data.train_y,
+model.fit(x=train_x, y=train_y,
           validation_split=0.1,
           batch_size=config.batch_size,
           shuffle=True,
