@@ -4,8 +4,8 @@ import bert
 
 
 class Config:
-    def __init__(self, config_dir="./bert-for-tf2"):
-        with open(os.path.join(config_dir, 'config.json'), 'r') as f:
+    def __init__(self, config_dir="./bert-for-tf2", config_name="config.json"):
+        with open(os.path.join(config_dir, config_name), 'r') as f:
             config = json.load(f)
             for key, value in config.items():
                 self[key] = value
