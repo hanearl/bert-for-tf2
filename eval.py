@@ -9,7 +9,7 @@ from config import Config
 
 
 class Eval:
-    def __init__(self, model_name):
+    def __init__(self, model_name="sentiments.h5"):
         self.config = Config()
 
         self.model_name = model_name
