@@ -1,11 +1,13 @@
 import os
+import pickle
+import json
+
 import pandas as pd
 import tensorflow as tf
 import numpy as np
-import json
+
 from config import Config
-import pickle
-import bert
+from tokenizer import get_tokenizer
 
 
 class MyCustomCallback(tf.keras.callbacks.Callback):
@@ -23,11 +25,7 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
         self.pred_sentences = [df.sentence[i] for i in range(10, 20)]
         self.pred_sentiments = [df.sentiments[i] for i in range(10, 20)]
 
-        # Tokenize
-        do_lower_case = not (self.config.model_name.find("cased") == 0 or self.config.model_name.find("multi_cased") == 0)
-        bert.bert_tokenization.validate_case_matches_checkpoint(do_lower_case, self.config.model_ckpt)
-        vocab_file = os.path.join(self.config.model_dir, "vocab.txt")
-        self.tokenizer = bert.bert_tokenization.FullTokenizer(vocab_file, do_lower_case)
+        self.tokenizer = get_tokenizer(self.config)
 
     def on_epoch_end(self, epoch, logs=None):
         epoch = epoch + 1

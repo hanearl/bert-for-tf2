@@ -4,6 +4,7 @@ import bert
 
 class Config:
     def __init__(self, config):
+        self.max_seq_len = config['max_seq_len']
         self.focal_gamma = config['focal_gamma']
         self.save_model_period = config['save_model_period']
         self.loss_func = config['loss_func']
