@@ -22,7 +22,7 @@ class Eval:
         self.model.load_weights(os.path.join(self.config.epoch_model_path, model_name))
 
     def eval(self):
-        print(self.model.evaluate(x=self.test_x[:32], y=self.test_y[:32], batch_size=32))
+        print(self.model.evaluate(x=self.test_x, y=self.test_y, batch_size=self.config.batch_size))
 
     def predict(self, test_set):
         sentences = self.tokenize(test_set)
