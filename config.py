@@ -4,16 +4,14 @@ import bert
 
 
 class Config:
-    def __init__(self):
-        with open('./config.json', 'r') as f:
+    def __init__(self, config_dir="./bert-for-tf2"):
+        with open(os.path.join(config_dir, 'config.json'), 'r') as f:
             config = json.load(f)
             for key, value in config.items():
                 self[key] = value
 
-        with open('./class.json', 'r') as f:
+        with open(os.path.join(config_dir, 'class.json'), 'r') as f:
             self.classes = json.load(f)
-
-        self.drive_path = "/home/hanearl/Desktop"
 
         self.project_path = os.path.join(self.drive_path, "bert_sentiment")
         self.bert_model_path = os.path.join(self.project_path, "bert_model")
