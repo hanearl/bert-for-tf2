@@ -1,7 +1,9 @@
 import os
+import sys
 import datetime
 import pickle
 
+sys.path.append('bert-for-tf2')
 from tensorflow import keras
 
 from create_model import create_model
