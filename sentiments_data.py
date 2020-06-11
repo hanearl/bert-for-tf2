@@ -17,7 +17,7 @@ class SentimentsData:
 
     def get_train_data(self):
         def processing(sequence):
-            ops = [self._tokenize, self._pad_and_trim_sequence, self._add_special_token,
+            ops = [self._tokenize, self._add_special_token, self._pad_and_trim_sequence,
                    self._convert_tokens_to_ids]
             for op in ops:
                 sequence = op(sequence)
@@ -57,7 +57,7 @@ class SentimentsData:
         return self.tokenizer.tokenize(string)
 
     def _pad_and_trim_sequence(self, tokens):
-        max_seq_len = self.max_seq_len - 2
+        max_seq_len = self.max_seq_len
         def pad():
             nonlocal tokens
             while len(tokens) != max_seq_len:
