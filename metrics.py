@@ -4,8 +4,8 @@ from tensorflow import keras
 
 def get_accuracy(y_true, y_pred, batch_size):
     y_pred = tf.sigmoid(y_pred)
-    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
-    union = tf.reduce_sum(tf.cast((y_pred >= 0.5) | (y_true == 1), dtype=tf.float32))
+    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32), axis=-1)
+    union = tf.reduce_sum(tf.cast((y_pred >= 0.5) | (y_true == 1), dtype=tf.float32), axis=-1)
     union += 1e-8
     return tf.reduce_sum(inter / union) / batch_size
 
