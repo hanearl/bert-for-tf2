@@ -87,10 +87,12 @@ def create_model(max_seq_len, adapter_size=64):
         loss = tf.reduce_mean(tf.reduce_sum(loss))
         return loss
     focal_loss = BinaryFocalLoss(gamma=config.focal_gamma, from_logits=True)
+    tfa_focal_loss = tf.keras.losses.SigmoidFocalCrossEntropy(gamma=config.focal_gamma)
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_cross_entropy_loss,
-        "focal_loss": focal_loss
+        "focal_loss": focal_loss,
+        "tfa_focal_loss": tfa_focal_loss
     }
 
     model.compile(optimizer=keras.optimizers.Adam(),
