@@ -83,9 +83,23 @@ def create_model(max_seq_len, adapter_size=64):
     if adapter_size is not None:
         freeze_bert_layers(bert)
 
-    def sigmoid_cross_entropy_loss(true, pred):
+    def sigmoid_sum_mean(true, pred):
         loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
         loss = tf.reduce_mean(tf.reduce_sum(loss))
+        return loss
+
+    def sigmoid(true, pred):
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
+        return loss
+
+    def sigmoid_sum(true, pred):
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
+        loss = tf.reduce_sum(loss)
+        return loss
+
+    def sigmoid_mean(true, pred):
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
+        loss = tf.reduce_mean(loss)
         return loss
 
     focal_loss = BinaryFocalLoss(gamma=config.focal_gamma, from_logits=True)
@@ -103,7 +117,10 @@ def create_model(max_seq_len, adapter_size=64):
         return loss
 
     loss_func_list = {
-        "sigmoid_cross_entropy_loss": sigmoid_cross_entropy_loss,
+        "sigmoid_cross_entropy_loss": sigmoid_sum_mean,
+        "sigmoid": sigmoid,
+        "sigmoid_mean": sigmoid_mean,
+        "sigmoid_sum": sigmoid_sum,
         "focal_loss": my_focal_loss,
         "tfa_focal_loss": my_tfa_focal_loss
     }
