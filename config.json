@@ -1,13 +1,14 @@
 {
   "drive_path": "/content/drive/My Drive",
-  "train_name": "sigmoid_loss",
+  "train_name": "lab_",
   "model_name": "multi_cased_L-12_H-768_A-12",
-  "save_model_period": 2,
+  "save_model_period": 5,
   "num_epochs": 50,
   "batch_size": 72,
-  "warmup_epoch_count": 5,
-  "loss_func": "sigmoid_cross_entropy_loss",
+  "warmup_epoch_count": 10,
+  "loss_func": "focal_loss",
   "initial_epoch": 0,
   "focal_gamma": 2,
+  "focal_alpha": 0.9,
   "max_seq_len": 128
 }

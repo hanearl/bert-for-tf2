@@ -84,18 +84,17 @@ def create_model(max_seq_len, adapter_size=64):
         freeze_bert_layers(bert)
 
     def sigmoid_cross_entropy_loss(true, pred):
+
         loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
         loss = tf.reduce_mean(tf.reduce_sum(loss))
         return loss
     focal_loss = BinaryFocalLoss(gamma=config.focal_gamma, from_logits=True)
-    tfa_focal_loss = tfa.losses.SigmoidFocalCrossEntropy(gamma=config.focal_gamma)
-    npair_loss = tfa.losses.NpairsMultilabelLoss()
+    tfa_focal_loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha, gamma=config.focal_gamma)
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_cross_entropy_loss,
         "focal_loss": focal_loss,
-        "tfa_focal_loss": tfa_focal_loss,
-        "npair_loss": npair_loss
+        "tfa_focal_loss": tfa_focal_loss
     }
 
     model.compile(optimizer=keras.optimizers.Adam(),
