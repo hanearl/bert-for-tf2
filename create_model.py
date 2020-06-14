@@ -83,52 +83,14 @@ def create_model(max_seq_len, adapter_size=64):
     if adapter_size is not None:
         freeze_bert_layers(bert)
 
-    def sigmoid_sum_mean(true, pred):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
-        loss = tf.reduce_mean(tf.reduce_sum(loss))
-        return loss
-
-    def sigmoid(true, pred):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
-        return loss
-
-    def sigmoid_sum(true, pred):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
-        loss = tf.reduce_sum(loss)
-        return loss
-
-    def sigmoid_mean(true, pred):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=true)
-        loss = tf.reduce_mean(loss)
-        return loss
-
-    focal_loss = BinaryFocalLoss(gamma=config.focal_gamma, from_logits=True)
-
-    def my_focal_loss(y_true, y_pred):
-        loss = focal_loss(y_pred=y_pred, y_true=y_true)
-        loss = tf.reduce_mean(tf.reduce_sum(loss))
-        return loss
-
-    tfa_focal_loss_auto = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
-                                                         gamma=config.focal_gamma,
-                                                         reduction=tf.keras.losses.Reduction.AUTO)
-
-    tfa_focal_loss_sum = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
-                                                         gamma=config.focal_gamma,
-                                                         reduction=tf.keras.losses.Reduction.SUM)
-    tfa_focal_loss_batch_sum = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
-                                                         gamma=config.focal_gamma,
-                                                         reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE)
+    sigmoid_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True,
+                                                               label_smoothing=config.label_smoothing)
+    tfa_focal_loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
+                                                         gamma=config.focal_gamma)
 
     loss_func_list = {
-        "sigmoid_cross_entropy_loss": sigmoid_sum_mean,
-        "sigmoid": sigmoid,
-        "sigmoid_mean": sigmoid_mean,
-        "sigmoid_sum": sigmoid_sum,
-        "focal_loss": my_focal_loss,
-        "tfa_focal_loss_auto": tfa_focal_loss_auto,
-        "tfa_focal_loss_sum": tfa_focal_loss_sum,
-        "tfa_focal_loss_batch_sum": tfa_focal_loss_batch_sum
+        "sigmoid_cross_entropy_loss": sigmoid_cross_entropy,
+        "focal_loss": tfa_focal_loss
     }
 
     model.compile(optimizer=keras.optimizers.Adam(),
