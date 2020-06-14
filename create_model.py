@@ -109,12 +109,16 @@ def create_model(max_seq_len, adapter_size=64):
         loss = tf.reduce_mean(tf.reduce_sum(loss))
         return loss
 
-    tfa_focal_loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha, gamma=config.focal_gamma)
+    tfa_focal_loss_auto = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
+                                                         gamma=config.focal_gamma,
+                                                         reduction=tf.keras.losses.Reduction.AUTO)
 
-    def my_tfa_focal_loss(y_true, y_pred):
-        loss = tfa_focal_loss(y_pred=y_pred, y_true=y_true)
-        loss = tf.reduce_mean(tf.reduce_sum(loss))
-        return loss
+    tfa_focal_loss_sum = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
+                                                         gamma=config.focal_gamma,
+                                                         reduction=tf.keras.losses.Reduction.SUM)
+    tfa_focal_loss_batch_sum = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
+                                                         gamma=config.focal_gamma,
+                                                         reduction=tf.keras.losses.Reduction.SUM_OVER_BATCH_SIZE)
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_sum_mean,
@@ -122,7 +126,9 @@ def create_model(max_seq_len, adapter_size=64):
         "sigmoid_mean": sigmoid_mean,
         "sigmoid_sum": sigmoid_sum,
         "focal_loss": my_focal_loss,
-        "tfa_focal_loss": my_tfa_focal_loss
+        "tfa_focal_loss_auto": tfa_focal_loss_auto,
+        "tfa_focal_loss_sum": tfa_focal_loss_sum,
+        "tfa_focal_loss_batch_sum": tfa_focal_loss_batch_sum
     }
 
     model.compile(optimizer=keras.optimizers.Adam(),
