@@ -68,9 +68,8 @@ def create_model(max_seq_len, adapter_size=64):
     output = bert(input_ids)
 
     cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
-    # cls_out = keras.layers.Dropout(0.5)(cls_out)
-    # logits = keras.layers.Dense(units=768, activation="tanh")(cls_out)
     logits = keras.layers.Dropout(0.5)(cls_out)
+    logits = keras.layers.LayerNormalization()(logits)
     logits = keras.layers.Dense(units=len(config.classes))(logits)
 
     model = keras.Model(inputs=input_ids, outputs=logits)
