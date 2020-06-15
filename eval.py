@@ -5,12 +5,11 @@ import tensorflow as tf
 
 from create_model import create_model
 from tokenizer import get_tokenizer
-from config import Config
 
 
 class Eval:
-    def __init__(self, config_name=None, model_name="sentiments.h5"):
-        self.config = Config(config_name=config_name)
+    def __init__(self, config, model_name="sentiments.h5"):
+        self.config = config
 
         self.model_name = model_name
         self.tokenizer = get_tokenizer(self.config)
@@ -22,7 +21,10 @@ class Eval:
         self.model.load_weights(os.path.join(self.config.epoch_model_path, model_name))
 
     def eval(self):
-        print(self.model.evaluate(x=self.test_x, y=self.test_y, batch_size=self.config.batch_size))
+        result = self.model.evaluate(x=self.test_x[:2000], y=self.test_y[:2000], batch_size=self.config.batch_size)
+        with open(os.path.join(self.config.epoch_log_path, 'eval.txt'), 'w') as f:
+            f.write(str(result))
+
 
     def predict(self, test_set):
         sentences = self.tokenize(test_set)
