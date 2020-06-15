@@ -19,7 +19,6 @@ class ExamHelper:
         with open(os.path.join(self.config.data_path, "train_set.pkl"), "rb") as f:
             (self.train_x, self.train_y) = pickle.load(f)
         self.bot = ExamAlarmBot()
-        self.eval = Eval(config)
 
     def create_dir(self):
         if not os.path.isdir(self.config.epoch_log_path):
@@ -50,5 +49,6 @@ class ExamHelper:
                                                             total_epoch_count=self.config.num_epochs),
                              tensorboard_callback, MyCustomCallback()])
         model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
+        self.eval = Eval(self.config)
         self.eval.eval()
         self.bot.send_msg('{} train is done'.format(self.config.train_name))
