@@ -10,7 +10,7 @@ from create_model import create_model
 from create_model import create_learning_rate_scheduler
 from callback import MyCustomCallback
 from alarm_bot import ExamAlarmBot
-
+from eval import Eval
 
 class ExamHelper:
     def __init__(self, config):
@@ -19,6 +19,7 @@ class ExamHelper:
         with open(os.path.join(self.config.data_path, "train_set.pkl"), "rb") as f:
             (self.train_x, self.train_y) = pickle.load(f)
         self.bot = ExamAlarmBot()
+        self.eval = Eval(config)
 
     def create_dir(self):
         if not os.path.isdir(self.config.epoch_log_path):
@@ -48,5 +49,6 @@ class ExamHelper:
                                                             warmup_epoch_count=self.config.warmup_epoch_count,
                                                             total_epoch_count=self.config.num_epochs),
                              tensorboard_callback, MyCustomCallback()])
-
+        model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
+        self.eval.eval()
         self.bot('{} train is done'.format(self.config.train_name))
