@@ -51,4 +51,4 @@ class ExamHelper:
                              tensorboard_callback, MyCustomCallback()])
         model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
         self.eval.eval()
-        self.bot('{} train is done'.format(self.config.train_name))
+        self.bot.send_msg('{} train is done'.format(self.config.train_name))
