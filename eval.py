@@ -21,7 +21,7 @@ class Eval:
         self.model.load_weights(os.path.join(self.config.epoch_model_path, model_name))
 
     def eval(self):
-        result = self.model.evaluate(x=self.test_x[:self.config.train_len * 0.2], y=self.test_y[:self.config.train_len * 0.2], batch_size=self.config.batch_size)
+        result = self.model.evaluate(x=self.test_x[:int(self.config.train_len * 0.2)], y=self.test_y[:int(self.config.train_len * 0.2)], batch_size=self.config.batch_size)
         with open(os.path.join(self.config.epoch_log_path, 'eval.txt'), 'w') as f:
             f.write(str(result))
 
