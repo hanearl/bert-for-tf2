@@ -11,11 +11,9 @@ from tokenizer import get_tokenizer
 
 
 class MyCustomCallback(tf.keras.callbacks.Callback):
-    def __init__(self):
+    def __init__(self, config):
         super(MyCustomCallback, self).__init__()
-
-        self.config = Config()
-
+        self.config = config
         df = pd.read_csv(os.path.join(self.config.data_path, 'sentiments.csv'))
 
         self.pred_sentences = [df.sentence[i] for i in range(10, 20)]

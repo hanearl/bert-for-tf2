@@ -5,16 +5,11 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow import keras
 
-import bert
 from bert import BertModelLayer
 from bert.loader import StockBertConfig, map_stock_config_to_params, load_stock_weights
-from focal_loss import BinaryFocalLoss
 
 from metrics import MultiLabelAccuracy, MultiLabelPrecision,\
                             MultiLabelRecall, MultiLabelF1, HammingLoss
-from config import Config
-
-config = Config()
 
 
 def flatten_layers(root_layer):
@@ -54,7 +49,7 @@ def create_learning_rate_scheduler(max_learn_rate=5e-5,
     return learning_rate_scheduler
 
 
-def create_model(max_seq_len, adapter_size=64):
+def create_model(config, adapter_size=64):
     """Creates a classification model."""
 
     # create the bert layer
@@ -64,7 +59,7 @@ def create_model(max_seq_len, adapter_size=64):
         bert_params.adapter_size = adapter_size
         bert = BertModelLayer.from_params(bert_params, name="bert")
 
-    input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
+    input_ids = keras.layers.Input(shape=(config.max_seq_len,), dtype='int32', name="input_ids")
     output = bert(input_ids)
 
     cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
@@ -73,7 +68,7 @@ def create_model(max_seq_len, adapter_size=64):
     logits = keras.layers.Dense(units=len(config.classes))(logits)
 
     model = keras.Model(inputs=input_ids, outputs=logits)
-    model.build(input_shape=(None, max_seq_len))
+    model.build(input_shape=(None, config.max_seq_len))
 
     # load the pre-trained model weights
     load_stock_weights(bert, config.bert_ckpt_file)

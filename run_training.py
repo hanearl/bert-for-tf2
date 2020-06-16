@@ -35,7 +35,7 @@ class ExamHelper:
         tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
 
         adapter_size = None # use None to fine-tune all of BERT
-        model = create_model(self.config.max_seq_len, adapter_size=adapter_size)
+        model = create_model(self.config, adapter_size=adapter_size)
 
         model.fit(x=self.train_x[:self.config.train_len], y=self.train_y[:self.config.train_len],
                   validation_split=0.2,
@@ -47,7 +47,7 @@ class ExamHelper:
                                                             end_learn_rate=1e-7,
                                                             warmup_epoch_count=self.config.warmup_epoch_count,
                                                             total_epoch_count=self.config.num_epochs),
-                             tensorboard_callback, MyCustomCallback()])
+                             tensorboard_callback, MyCustomCallback(self.config)])
         model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
         self.eval = Eval(self.config)
         self.eval.eval()
