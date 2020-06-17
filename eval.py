@@ -17,7 +17,7 @@ class Eval:
             (self.test_x, self.test_y) = pickle.load(f)
 
         adapter_size = None # use None to fine-tune all of BERT
-        self.model = create_model(self.config.max_seq_len, adapter_size=adapter_size)
+        self.model = create_model(self.config, adapter_size=adapter_size)
         self.model.load_weights(os.path.join(self.config.epoch_model_path, model_name))
 
     def eval(self):
