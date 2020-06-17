@@ -13,7 +13,7 @@ class Eval:
 
         self.model_name = model_name
         self.tokenizer = get_tokenizer(self.config)
-        with open(os.path.join(self.config.data_path, 'test_set.pkl'), 'rb') as f:
+        with open(os.path.join(self.config.data_path, self.config.test_set), 'rb') as f:
             (self.test_x, self.test_y) = pickle.load(f)
 
         adapter_size = None # use None to fine-tune all of BERT

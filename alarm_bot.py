@@ -8,7 +8,4 @@ class ExamAlarmBot:
         self.bot = telegram.Bot(token=TELEGRAM_TOKEN)
 
     def send_msg(self, message):
-        updates = self.bot.getUpdates()
-        chat_id = updates[-1].message.chat_id
-
-        self.bot.sendMessage(chat_id=chat_id, text=message)
+        self.bot.sendMessage(chat_id=813359225, text=message)
