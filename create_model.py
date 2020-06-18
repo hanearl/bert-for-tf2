@@ -80,7 +80,8 @@ def create_model(config, adapter_size=64):
     sigmoid_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True,
                                                                label_smoothing=config.label_smoothing)
     tfa_focal_loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
-                                                         gamma=config.focal_gamma)
+                                                         gamma=config.focal_gamma,
+                                                         from_logits=True)
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_cross_entropy,
