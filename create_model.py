@@ -74,8 +74,8 @@ def create_model(config, adapter_size=64):
     load_stock_weights(bert, config.bert_ckpt_file)
 
     # freeze weights if adapter-BERT is used
-    if adapter_size is not None:
-        freeze_bert_layers(bert)
+    # if adapter_size is not None:
+    #     freeze_bert_layers(bert)
 
     sigmoid_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True,
                                                                label_smoothing=config.label_smoothing)
