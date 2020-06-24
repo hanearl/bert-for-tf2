@@ -59,7 +59,7 @@ def create_model(config, adapter_size=64):
         bert_params.adapter_size = adapter_size
         bert = BertModelLayer.from_params(bert_params, name="bert")
 
-    attention = tf.Variable(tf.random_normal([config.max_seq_len, len(config.classes)], stddev=0.35))
+    attention = tf.random.uniform((config.max_seq_len, len(config.classes)))
     input_ids = keras.layers.Input(shape=(config.max_seq_len,), dtype='int32', name="input_ids")
     output = bert(input_ids)
 
