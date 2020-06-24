@@ -66,9 +66,9 @@ def create_model(config, adapter_size=64):
     attention_weights = tf.nn.softmax(matmul_qk, axis=-1)
     logits = tf.matmul(attention_weights, output)
     logits = tf.reduce_sum(logits, axis=1)
-    # cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
-    # # (batch_size, embbedding)
-    # print(cls_out)
+
+    cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
+    logits = tf.keras.layers.Concatenate(axis=-1)([cls_out, logits])
 
     logits = keras.layers.Dropout(0.5)(logits)
     logits = keras.layers.LayerNormalization()(logits)
