@@ -59,19 +59,20 @@ def create_model(config, adapter_size=64):
         bert_params.adapter_size = adapter_size
         bert = BertModelLayer.from_params(bert_params, name="bert")
 
-    attention = tf.random.uniform((config.max_seq_len, len(config.classes)))
     input_ids = keras.layers.Input(shape=(config.max_seq_len,), dtype='int32', name="input_ids")
     output = bert(input_ids)
 
     matmul_qk = tf.matmul(output, output, transpose_b=True)
     attention_weights = tf.nn.softmax(matmul_qk, axis=-1)
-    logits = tf.matmul(attention_weights, attention)
-
+    logits = tf.matmul(attention_weights, output)
+    logits = tf.reduce_sum(logits, axis=1)
     # cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
     # # (batch_size, embbedding)
-    # logits = keras.layers.Dropout(0.5)(cls_out)
-    # logits = keras.layers.LayerNormalization()(logits)
-    # logits = keras.layers.Dense(units=len(config.classes))(logits)
+    # print(cls_out)
+
+    logits = keras.layers.Dropout(0.5)(logits)
+    logits = keras.layers.LayerNormalization()(logits)
+    logits = keras.layers.Dense(units=len(config.classes))(logits)
 
     model = keras.Model(inputs=input_ids, outputs=logits)
     model.build(input_shape=(None, config.max_seq_len))
