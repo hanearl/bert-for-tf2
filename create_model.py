@@ -102,13 +102,14 @@ def create_model(config, adapter_size=64):
         loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
                                                          gamma=config.focal_gamma,
                                                          from_logits=True,
-                                                   reduction="NONE")
+                                                   reduction=tf.keras.losses.Reduction.NONE)
         y_true = (1 - config.label_smoothing) * y_true + config.label_smoothing / len(config.classes)
         print('y_true', y_true.shape)
         x = loss(y_true, y_pred)
         print('x', x.shape)
         x *= cls_weight
         print('x2', x.shape)
+        tf.reduce_sum(x)/y_true.shape[0]
         return x
 
     loss_func_list = {
