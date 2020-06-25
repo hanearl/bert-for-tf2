@@ -101,7 +101,8 @@ def create_model(config, adapter_size=64):
         cls_weight = None
         loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
                                                          gamma=config.focal_gamma,
-                                                         from_logits=True)
+                                                         from_logits=True,
+                                                   reduction=None)
         y_true = (1 - config.label_smoothing) * y_true + config.label_smoothing / len(config.classes)
         print('y_true', y_true.shape)
         x = loss(y_true, y_pred)
