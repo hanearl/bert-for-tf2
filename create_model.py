@@ -1,6 +1,7 @@
 import os
 import math
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow import keras
@@ -49,6 +50,15 @@ def create_learning_rate_scheduler(max_learn_rate=5e-5,
     return learning_rate_scheduler
 
 
+def get_cls_weight():
+    return np.array([0.94829875, 0.9763115 , 0.98265562, 0.8767022 , 0.99662406,
+       0.99833099, 0.97284072, 0.9967663 , 0.97057429, 0.97911846,
+       0.96726473, 0.98885749, 0.97259417, 0.97139931, 0.94361416,
+       0.97229071, 0.95213936, 0.89593369, 0.99282138, 0.98731176,
+       0.94005804, 0.96403103, 0.92873535, 0.96460001, 0.96383189,
+       0.99580852, 0.99823616, 0.9925843 , 0.99441452, 0.99229981,
+       0.9662785 , 0.97193036, 0.99304897, 0.9916929 ])
+
 def create_model(config, adapter_size=64):
     """Creates a classification model."""
 
@@ -88,11 +98,17 @@ def create_model(config, adapter_size=64):
                                                                label_smoothing=config.label_smoothing)
 
     def tfa_focal_loss(y_true, y_pred):
+        cls_weight = None
         loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
                                                          gamma=config.focal_gamma,
                                                          from_logits=True)
         y_true = (1 - config.label_smoothing) * y_true + config.label_smoothing / len(config.classes)
-        return loss(y_true, y_pred)
+        print('y_true', y_true.shape)
+        x = loss(y_true, y_pred)
+        print('x', x.shape)
+        x *= cls_weight
+        print('x2', x.shape)
+        return x
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_cross_entropy,
