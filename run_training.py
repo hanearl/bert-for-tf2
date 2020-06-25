@@ -39,8 +39,6 @@ class ExamHelper:
         model = create_model(self.config, adapter_size=adapter_size)
         _, _, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
 
-        y_test = (1 - self.config.label_smoothing) * y_test + self.config.label_smoothing / len(self.config.classes)
-
         model.fit(x=X_test, y=y_test,
                   validation_split=0.2,
                   batch_size=self.config.batch_size,
