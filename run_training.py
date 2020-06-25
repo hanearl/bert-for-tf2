@@ -4,6 +4,7 @@ import datetime
 import pickle
 
 sys.path.append('bert-for-tf2')
+import tensorflow as tf
 from tensorflow import keras
 from skmultilearn.model_selection import iterative_train_test_split
 
@@ -38,9 +39,11 @@ class ExamHelper:
         adapter_size = None # use None to fine-tune all of BERT
         model = create_model(self.config, adapter_size=adapter_size)
         _, _, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
+        cls_weight = 1 - (tf.reduce_sum(y_test, axis=0) / tf.reduce_sum(y_test))
 
         model.fit(x=X_test, y=y_test,
                   validation_split=0.2,
+                  cls_weight=cls_weight,
                   batch_size=self.config.batch_size,
                   shuffle=True,
                   epochs=self.config.num_epochs,

@@ -97,21 +97,9 @@ def create_model(config, adapter_size=64):
     sigmoid_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True,
                                                                label_smoothing=config.label_smoothing)
 
-    def tfa_focal_loss(y_true, y_pred):
-        cls_weight = None
-
-        loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
+    tfa_focal_loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
                                                          gamma=config.focal_gamma,
-                                                         from_logits=True,
-                                                   reduction=tf.keras.losses.ReductionV2.NONE)
-        y_true = (1 - config.label_smoothing) * y_true + config.label_smoothing / len(config.classes)
-        print('y_true', y_true.shape)
-        x = loss(y_true, y_pred)
-        print('x', x.shape)
-        x *= cls_weight
-        print('x2', x.shape)
-        x = tf.reduce_sum(x)/y_true.shape[0]
-        return x
+                                                         from_logits=True)
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_cross_entropy,
