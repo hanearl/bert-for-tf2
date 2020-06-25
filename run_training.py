@@ -39,6 +39,8 @@ class ExamHelper:
         model = create_model(self.config, adapter_size=adapter_size)
         _, _, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
 
+        y_test = (1 - self.config.label_smoothing) * y_test + self.config.label_smoothing / len(self.config.classes)
+
         model.fit(x=X_test, y=y_test,
                   validation_split=0.2,
                   batch_size=self.config.batch_size,
@@ -52,3 +54,22 @@ class ExamHelper:
                              tensorboard_callback, MyCustomCallback(self.config)])
         model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
         self.bot.send_msg('{} train is done'.format(self.config.train_name))
+
+from config import Config
+config = Config()
+config.drive_path = '/home/hanearl/Desktop'
+config.train_name = 'attn_add_01_1'
+config.num_epochs = 25
+config.loss_func = "focal_loss"
+config.focal_alpha = 0.75
+config.focal_gamma = 0.1
+config.train_set = 'train_set.pkl'
+config.test_set = 'test_set.pkl'
+config.test_ratio = 0.16
+config.attn_weight = 0.5
+config.cls_weight = 1.0
+config.label_smoothing = 0.1
+config.update_path()
+
+exam_helper = ExamHelper(config)
+exam_helper.run_exam()
