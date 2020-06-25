@@ -8,6 +8,7 @@ import numpy as np
 
 from config import Config
 from tokenizer import get_tokenizer
+from alarm_bot import ExamAlarmBot
 
 
 class MyCustomCallback(tf.keras.callbacks.Callback):
@@ -15,6 +16,7 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
         super(MyCustomCallback, self).__init__()
         self.config = config
         df = pd.read_csv(os.path.join(self.config.data_path, 'sentiments.csv'))
+        self.bot = ExamAlarmBot()
 
         self.pred_sentences = [df.sentence[i] for i in range(10, 20)]
         self.pred_sentiments = [df.sentiments[i] for i in range(10, 20)]
@@ -23,6 +25,9 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         epoch = epoch + 1
+        if epoch % 5 == 0:
+            self.bot.send_msg('epoch {} done'.format(epoch))
+
         if epoch % self.config.save_model_period == 0:
             self.model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
         pred_sentences = self.pred_sentences

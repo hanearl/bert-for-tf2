@@ -11,7 +11,7 @@ from create_model import create_model
 from create_model import create_learning_rate_scheduler
 from callback import MyCustomCallback
 from alarm_bot import ExamAlarmBot
-from eval import Eval
+
 
 class ExamHelper:
     def __init__(self, config):
@@ -37,10 +37,10 @@ class ExamHelper:
 
         adapter_size = None # use None to fine-tune all of BERT
         model = create_model(self.config, adapter_size=adapter_size)
-        _, _, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
+        X_train, y_train, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
 
-        model.fit(x=X_test, y=y_test,
-                  validation_split=0.2,
+        model.fit(x=X_train, y=y_train,
+                  validation_data=(X_test, y_test),
                   batch_size=self.config.batch_size,
                   shuffle=True,
                   epochs=self.config.num_epochs,
