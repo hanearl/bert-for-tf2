@@ -43,7 +43,7 @@ class ExamHelper:
 
         model.fit(x=X_test, y=y_test,
                   validation_split=0.2,
-                  cls_weight=cls_weight,
+                  class_weight=cls_weight,
                   batch_size=self.config.batch_size,
                   shuffle=True,
                   epochs=self.config.num_epochs,
