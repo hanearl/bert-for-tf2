@@ -41,6 +41,8 @@ class ExamHelper:
         _, _, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
         cls_weight = 1 - (tf.reduce_sum(y_test, axis=0) / tf.reduce_sum(y_test))
 
+        cls_weight = {i:val for i,val in enumerate(cls_weight)}
+
         model.fit(x=X_test, y=y_test,
                   validation_split=0.2,
                   class_weight=cls_weight,
