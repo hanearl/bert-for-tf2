@@ -16,5 +16,6 @@
   "test_set": "test_set.pkl",
   "test_ratio": 0.2,
   "attn_weight": 1.0,
-  "cls_weight": 1.0
+  "cls_weight": 1.0,
+  "load_model_name" : ""
 }

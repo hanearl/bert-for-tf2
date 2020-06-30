@@ -39,6 +39,9 @@ class ExamHelper:
         model = create_model(self.config, adapter_size=adapter_size)
         X_train, y_train, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
 
+        if self.config.load_model_name:
+            model.load_weights(os.path.join(self.config.epoch_model_path, self.config.load_model_name))
+
         model.fit(x=X_train, y=y_train,
                   validation_data=(X_test, y_test),
                   batch_size=self.config.batch_size,
