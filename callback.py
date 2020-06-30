@@ -25,7 +25,7 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         epoch = epoch + 1
-        if epoch % 5 == 0:
+        if epoch % 1 == 0:
             self.bot.send_msg('epoch {} done'.format(epoch))
 
         if epoch % self.config.save_model_period == 0:
