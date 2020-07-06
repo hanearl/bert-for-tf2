@@ -67,7 +67,8 @@ def create_model(config, adapter_size=64):
     logits = tf.matmul(attention_weights, output)
     logits = tf.reduce_sum(logits, axis=1) * config.attn_weight
 
-    cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output) * config.cls_weight
+    cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
+    cls_out = keras.layers.Dense(units=768)(cls_out) * config.cls_weight
     logits = cls_out + logits
 
     logits = keras.layers.Dropout(0.5)(logits)
