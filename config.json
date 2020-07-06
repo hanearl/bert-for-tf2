@@ -12,7 +12,7 @@
   "focal_gamma": 0,
   "max_seq_len": 128,
   "label_smoothing": 0.0,
-  "train_set": "train_set.pkl",
-  "test_set": "test_set.pkl",
+  "train_set": "lab_train.pkl",
+  "val_set": "lab_val.pkl",
   "test_ratio": 0.2
 }
