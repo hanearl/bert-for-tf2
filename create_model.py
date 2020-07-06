@@ -5,16 +5,11 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow import keras
 
-import bert
 from bert import BertModelLayer
 from bert.loader import StockBertConfig, map_stock_config_to_params, load_stock_weights
-from focal_loss import BinaryFocalLoss
 
 from metrics import MultiLabelAccuracy, MultiLabelPrecision,\
                             MultiLabelRecall, MultiLabelF1, HammingLoss
-from config import Config
-
-config = Config()
 
 
 def flatten_layers(root_layer):
@@ -54,7 +49,7 @@ def create_learning_rate_scheduler(max_learn_rate=5e-5,
     return learning_rate_scheduler
 
 
-def create_model(max_seq_len, adapter_size=64):
+def create_model(config, adapter_size=64):
     """Creates a classification model."""
 
     # create the bert layer
@@ -64,32 +59,36 @@ def create_model(max_seq_len, adapter_size=64):
         bert_params.adapter_size = adapter_size
         bert = BertModelLayer.from_params(bert_params, name="bert")
 
-    input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
+    input_ids = keras.layers.Input(shape=(config.max_seq_len,), dtype='int32', name="input_ids")
     output = bert(input_ids)
 
-    cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
-    cls_out = keras.layers.Dropout(0.5)(cls_out)
-    logits = keras.layers.Dense(units=768, activation="tanh")(cls_out)
-    logits = keras.layers.Dropout(0.5)(logits)
+    matmul_qk = tf.matmul(output, output, transpose_b=True)
+    attention_weights = tf.nn.softmax(matmul_qk, axis=-1)
+    logits = tf.matmul(attention_weights, output)
+    logits = tf.reduce_sum(logits, axis=1)
+    # cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
+    # # (batch_size, embbedding)
+    # print(cls_out)
 
-    weights = keras.layers.Attention()([logits, logits])
-    logits = tf.matmul(logits, weights, transpose_b=True)
+    logits = keras.layers.Dropout(0.5)(logits)
+    logits = keras.layers.LayerNormalization()(logits)
     logits = keras.layers.Dense(units=len(config.classes))(logits)
 
     model = keras.Model(inputs=input_ids, outputs=logits)
-    model.build(input_shape=(None, max_seq_len))
+    model.build(input_shape=(None, config.max_seq_len))
 
     # load the pre-trained model weights
     load_stock_weights(bert, config.bert_ckpt_file)
 
     # freeze weights if adapter-BERT is used
-    if adapter_size is not None:
-        freeze_bert_layers(bert)
+    # if adapter_size is not None:
+    #     freeze_bert_layers(bert)
 
     sigmoid_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True,
                                                                label_smoothing=config.label_smoothing)
     tfa_focal_loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
-                                                         gamma=config.focal_gamma)
+                                                         gamma=config.focal_gamma,
+                                                         from_logits=True)
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_cross_entropy,

@@ -28,6 +28,14 @@ class Config:
         self.bert_ckpt_file = os.path.join(self.bert_ckpt_dir, "bert_model.ckpt")
         self.bert_config_file = os.path.join(self.bert_ckpt_dir, "bert_config.json")
 
+    def update_path(self):
+        self.project_path = os.path.join(self.drive_path, "bert_sentiment")
+        self.bert_model_path = os.path.join(self.project_path, "bert_model")
+        self.data_path = os.path.join(self.project_path, "data")
+        self.epoch_log_path = os.path.join(self.project_path, "epoch_logs", self.train_name)
+        self.epoch_model_path = os.path.join(self.project_path, "epoch_models", self.train_name)
+        self.tb_path = os.path.join(self.project_path, "logs", self.train_name)
+
     def __getitem__(self, key):
         return getattr(self, key)
 

@@ -1,3 +1,5 @@
 bert-for-tf2
 focal-loss
 tensorflow-addons
+python-telegram-bot
+scikit-multilearn

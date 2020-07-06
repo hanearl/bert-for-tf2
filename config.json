@@ -1,15 +1,18 @@
 {
   "drive_path": "/content/drive/My Drive",
-  "train_name": "lab_",
+  "train_name": "lab_focal_9_0",
   "model_name": "multi_cased_L-12_H-768_A-12",
   "save_model_period": 5,
-  "num_epochs": 50,
+  "num_epochs": 40,
   "batch_size": 72,
-  "warmup_epoch_count": 10,
-  "loss_func": "sigmoid_cross_entropy_loss",
+  "warmup_epoch_count": 8,
+  "loss_func": "focal_loss",
   "initial_epoch": 0,
-  "focal_gamma": 2,
   "focal_alpha": 0.9,
+  "focal_gamma": 0,
   "max_seq_len": 128,
-  "label_smoothing": 0.0
+  "label_smoothing": 0.0,
+  "train_set": "train_set.pkl",
+  "test_set": "test_set.pkl",
+  "test_ratio": 0.2
 }

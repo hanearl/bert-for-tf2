@@ -11,11 +11,9 @@ from tokenizer import get_tokenizer
 
 
 class MyCustomCallback(tf.keras.callbacks.Callback):
-    def __init__(self):
+    def __init__(self, config):
         super(MyCustomCallback, self).__init__()
-
-        self.config = Config()
-
+        self.config = config
         df = pd.read_csv(os.path.join(self.config.data_path, 'sentiments.csv'))
 
         self.pred_sentences = [df.sentence[i] for i in range(10, 20)]
@@ -43,11 +41,11 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
         res_string = ''
         res_string += 'epoch: {}\n'.format(epoch)
         res_string += 'acc: {}, precision: {}, recall: {}, f1_score: {}, hamming_loss: {}\n'\
-                        .format(logs['multi_label_accuracy'],
-                                logs['multi_label_precision'],
-                                logs['multi_label_recall'],
-                                logs['multi_label_f1_score'],
-                                logs['hamming_loss'])
+                        .format(logs['val_multi_label_accuracy'],
+                                logs['val_multi_label_precision'],
+                                logs['val_multi_label_recall'],
+                                logs['val_multi_label_f1_score'],
+                                logs['val_hamming_loss'])
         for text, label, sentiment in zip(pred_sentences, self.pred_sentiments, res):
             pred_sentiments = [self.config.classes[str(s-1)] \
                                for s in sentiment * np.arange(1, len(self.config.classes) + 1) if s != 0]
