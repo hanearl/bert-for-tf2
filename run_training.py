@@ -19,6 +19,9 @@ class ExamHelper:
         self.create_dir()
         with open(os.path.join(self.config.data_path, self.config.train_set), "rb") as f:
             (self.train_x, self.train_y) = pickle.load(f)
+
+        with open(os.path.join(self.config.data_path, self.config.val_set), "rb") as f:
+            (self.val_x, self.val_y) = pickle.load(f)
         self.bot = ExamAlarmBot()
 
     def create_dir(self):
@@ -37,10 +40,9 @@ class ExamHelper:
 
         adapter_size = None # use None to fine-tune all of BERT
         model = create_model(self.config, adapter_size=adapter_size)
-        _, _, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
 
-        hist = model.fit(x=X_test, y=y_test,
-                  validation_split=0.2,
+        hist = model.fit(x=self.train_x, y=self.train_y,
+                  validation_data=(self.val_x, self.val_y),
                   batch_size=self.config.batch_size,
                   shuffle=True,
                   epochs=self.config.num_epochs,
