@@ -39,7 +39,7 @@ class ExamHelper:
         model = create_model(self.config, adapter_size=adapter_size)
         _, _, X_test, y_test = iterative_train_test_split(self.train_x, self.train_y, test_size=self.config.test_ratio)
 
-        model.fit(x=X_test, y=y_test,
+        hist = model.fit(x=X_test, y=y_test,
                   validation_split=0.2,
                   batch_size=self.config.batch_size,
                   shuffle=True,
@@ -50,5 +50,8 @@ class ExamHelper:
                                                             warmup_epoch_count=self.config.warmup_epoch_count,
                                                             total_epoch_count=self.config.num_epochs),
                              tensorboard_callback, MyCustomCallback(self.config)])
+
         model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
         self.bot.send_msg('{} train is done'.format(self.config.train_name))
+
+        return hist
