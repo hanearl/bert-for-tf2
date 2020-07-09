@@ -24,7 +24,7 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         epoch = epoch + 1
         if epoch % self.config.save_model_period == 0:
-            self.model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
+            self.model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments_{}.h5'.format(epoch)), overwrite=True)
         pred_sentences = self.pred_sentences
 
         pred_tokens = map(self.tokenizer.tokenize, pred_sentences)
