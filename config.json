@@ -13,6 +13,6 @@
   "max_seq_len": 128,
   "label_smoothing": 0.0,
   "train_set": "lab_train.pkl",
-  "val_set": "lab_val.pkl",
-  "test_ratio": 0.2
+  "test_set": "lab_test.pkl",
+  "val_set": "lab_val.pkl"
 }

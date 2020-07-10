@@ -35,6 +35,9 @@ class ExamHelper:
             os.mkdir(self.config.tb_path)
 
     def run_exam(self):
+        with open(os.path.join(self.config.epoch_log_path, 'config.txt'), 'w') as f:
+            f.write(str(self.config))
+
         log_dir = os.path.join(self.config.tb_path, datetime.datetime.now().strftime("%Y%m%d-%H%M%s"))
         tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)
 
@@ -53,7 +56,9 @@ class ExamHelper:
                                                             total_epoch_count=self.config.num_epochs),
                              tensorboard_callback, MyCustomCallback(self.config)])
 
-        model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments.h5'), overwrite=True)
+        model.save_weights(os.path.join(self.config.epoch_model_path, 'sentiments_fin.h5'), overwrite=True)
+        eval = Eval(self.config)
+        eval.eval()
         self.bot.send_msg('{} train is done'.format(self.config.train_name))
 
         return hist
