@@ -36,7 +36,7 @@ class ExamHelper:
 
     def run_exam(self):
         with open(os.path.join(self.config.epoch_log_path, 'config.txt'), 'w') as f:
-            f.write(str(self.config))
+            f.write(self.config.to_string())
 
         log_dir = os.path.join(self.config.tb_path, datetime.datetime.now().strftime("%Y%m%d-%H%M%s"))
         tensorboard_callback = keras.callbacks.TensorBoard(log_dir=log_dir)

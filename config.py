@@ -4,7 +4,7 @@ import bert
 
 
 class Config:
-    def __init__(self, config_dir="./bert-for-tf2", config_name="config.json"):
+    def __init__(self, config_dir="./", config_name="config.json"):
         with open(os.path.join(config_dir, config_name), 'r') as f:
             config = json.load(f)
             for key, value in config.items():
@@ -41,3 +41,10 @@ class Config:
 
     def __setitem__(self, key, value):
         return setattr(self, key, value)
+
+    def to_string(self):
+        text = ""
+        for k, v in self.__dict__.items():
+            text += "{} : {} \n".format(k, v)
+
+        return text
