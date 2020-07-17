@@ -62,13 +62,14 @@ def create_model(config, adapter_size=64):
     input_ids = keras.layers.Input(shape=(config.max_seq_len,), dtype='int32', name="input_ids")
     output = bert(input_ids)
 
-    matmul_qk = tf.matmul(output, output, transpose_b=True)
+    _output = keras.layers.Lambda(lambda seq: seq[:, 1:, :])(output)
+    matmul_qk = tf.matmul(_output, _output, transpose_b=True)
     attention_weights = tf.nn.softmax(matmul_qk, axis=-1)
-    logits = tf.matmul(attention_weights, output)
-    logits = tf.reduce_sum(logits, axis=1)
-    # cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output)
-    # # (batch_size, embbedding)
-    # print(cls_out)
+    logits = tf.matmul(attention_weights, _output)
+    logits = tf.reduce_sum(logits, axis=1) * config.attn_weight
+
+    cls_out = keras.layers.Lambda(lambda seq: seq[:, 0, :])(output) * config.cls_weight
+    logits = cls_out + logits
 
     logits = keras.layers.Dropout(0.5)(logits)
     logits = keras.layers.LayerNormalization()(logits)

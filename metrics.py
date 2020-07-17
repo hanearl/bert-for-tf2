@@ -4,35 +4,34 @@ from tensorflow import keras
 
 def get_accuracy(y_true, y_pred, batch_size):
     y_pred = tf.sigmoid(y_pred)
-    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32), axis=-1)
-    union = tf.reduce_sum(tf.cast((y_pred >= 0.5) | (y_true == 1), dtype=tf.float32), axis=-1)
+    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
+    union = tf.reduce_sum(tf.cast((y_pred >= 0.5) | (y_true == 1), dtype=tf.float32))
     union += 1e-8
-    return tf.reduce_sum(inter / union) / batch_size
+    return inter / union
 
 
 def get_precision(y_true, y_pred, batch_size):
     y_pred = tf.sigmoid(y_pred)
-    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32), axis=-1)
-    pred_sum = tf.reduce_sum(tf.cast(y_pred >= 0.5, dtype=tf.float32), axis=-1)
+    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
+    pred_sum = tf.reduce_sum(tf.cast(y_pred >= 0.5, dtype=tf.float32))
     pred_sum += 1e-8
-    return tf.reduce_sum(inter / pred_sum) / batch_size
+    return inter / pred_sum
 
 
 def get_recall(y_true, y_pred, batch_size):
     y_pred = tf.sigmoid(y_pred)
-    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32), axis=-1)
-    true_sum = tf.reduce_sum(tf.cast(y_true == 1, dtype=tf.float32), axis=-1)
+    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
+    true_sum = tf.reduce_sum(tf.cast(y_true == 1, dtype=tf.float32))
     true_sum += 1e-8
-    return tf.reduce_sum(inter/true_sum) / batch_size
+    return inter/true_sum
 
 
 def get_f1_score(y_true, y_pred, batch_size):
     y_pred = tf.sigmoid(y_pred)
-    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32), axis=-1)
-    true_sum = tf.reduce_sum(tf.cast(y_true == 1, dtype=tf.float32), axis=-1)
-    pred_sum = tf.reduce_sum(tf.cast(y_pred >= 0.5, dtype=tf.float32), axis=-1)
-    f1_score = tf.reduce_sum((2 * inter) / (true_sum + pred_sum + 1e-10))
-    return f1_score / batch_size
+    inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
+    true_sum = tf.reduce_sum(tf.cast(y_true == 1, dtype=tf.float32))
+    pred_sum = tf.reduce_sum(tf.cast(y_pred >= 0.5, dtype=tf.float32))
+    return (2 * inter) / (true_sum + pred_sum + 1e-10)
 
 
 def get_hamming_loss(y_true, y_pred, batch_size):
