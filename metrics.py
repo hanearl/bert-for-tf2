@@ -59,8 +59,9 @@ class MultiLabelRecall(keras.metrics.Metric):
         self.true_sum = self.add_weight(name='tp', initializer='zeros')
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        y_pred = tf.sigmoid(y_pred)
         inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
-        true_sum = tf.reduce_sum(tf.cast(y_true == 1, dtype=tf.float32))
+        true_sum = tf.reduce_sum(tf.cast((y_true == 1), dtype=tf.float32))
         self.inter.assign_add(inter)
         self.true_sum.assign_add(true_sum)
 
