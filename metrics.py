@@ -3,7 +3,7 @@ from tensorflow import keras
 
 
 def get_hamming_loss(y_true, y_pred, batch_size):
-    y_pred = tf.sigmoid(y_pred)
+    # y_pred = tf.sigmoid(y_pred)
     hamming = tf.math.logical_xor((y_pred >= 0.5), (y_true == 1))
     hamming = tf.reduce_sum(tf.cast(hamming, dtype=tf.float32))
     return hamming / (batch_size * y_true.shape[1])
@@ -16,7 +16,7 @@ class MultiLabelAccuracy(keras.metrics.Metric):
         self.union = self.add_weight(name='tp', initializer='zeros')
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        y_pred = tf.sigmoid(y_pred)
+        # y_pred = tf.sigmoid(y_pred)
         inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
         union = tf.reduce_sum(tf.cast((y_pred >= 0.5) | (y_true == 1), dtype=tf.float32))
         self.inter.assign_add(inter)
@@ -38,7 +38,7 @@ class MultiLabelPrecision(keras.metrics.Metric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
 
-        y_pred = tf.sigmoid(y_pred)
+        # y_pred = tf.sigmoid(y_pred)
         inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
         pred_sum = tf.reduce_sum(tf.cast(y_pred >= 0.5, dtype=tf.float32))
         self.inter.assign_add(inter)
@@ -59,7 +59,7 @@ class MultiLabelRecall(keras.metrics.Metric):
         self.true_sum = self.add_weight(name='tp', initializer='zeros')
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        y_pred = tf.sigmoid(y_pred)
+        # y_pred = tf.sigmoid(y_pred)
         inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
         true_sum = tf.reduce_sum(tf.cast((y_true == 1), dtype=tf.float32))
         self.inter.assign_add(inter)
@@ -81,7 +81,7 @@ class MultiLabelF1(keras.metrics.Metric):
         self.pred_sum = self.add_weight(name='tp', initializer='zeros')
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        y_pred = tf.sigmoid(y_pred)
+        # y_pred = tf.sigmoid(y_pred)
         inter = tf.reduce_sum(tf.cast((y_pred >= 0.5) & (y_true == 1), dtype=tf.float32))
         true_sum = tf.reduce_sum(tf.cast(y_true == 1, dtype=tf.float32))
         pred_sum = tf.reduce_sum(tf.cast(y_pred >= 0.5, dtype=tf.float32))
@@ -90,7 +90,7 @@ class MultiLabelF1(keras.metrics.Metric):
         self.pred_sum.assign_add(pred_sum)
 
     def result(self):
-        return (2 * self.inter) / (self.true_sum + self.true_sum + 1e-10)
+        return (2 * self.inter) / (self.pred_sum + self.true_sum + 1e-8)
 
     def reset_states(self):
         self.inter.assign(0.)

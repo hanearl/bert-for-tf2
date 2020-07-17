@@ -73,7 +73,7 @@ def create_model(config, adapter_size=64):
 
     logits = keras.layers.Dropout(0.5)(logits)
     logits = keras.layers.LayerNormalization()(logits)
-    logits = keras.layers.Dense(units=len(config.classes))(logits)
+    logits = keras.layers.Dense(units=len(config.classes), activation='sigmoid')(logits)
 
     model = keras.Model(inputs=input_ids, outputs=logits)
     model.build(input_shape=(None, config.max_seq_len))
@@ -85,11 +85,9 @@ def create_model(config, adapter_size=64):
     # if adapter_size is not None:
     #     freeze_bert_layers(bert)
 
-    sigmoid_cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True,
-                                                               label_smoothing=config.label_smoothing)
+    sigmoid_cross_entropy = tf.keras.losses.BinaryCrossentropy(label_smoothing=config.label_smoothing)
     tfa_focal_loss = tfa.losses.SigmoidFocalCrossEntropy(alpha=config.focal_alpha,
-                                                         gamma=config.focal_gamma,
-                                                         from_logits=True)
+                                                         gamma=config.focal_gamma)
 
     loss_func_list = {
         "sigmoid_cross_entropy_loss": sigmoid_cross_entropy,
