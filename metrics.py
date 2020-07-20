@@ -106,9 +106,10 @@ class HammingLoss(keras.metrics.Metric):
         self.batch_size = kwargs['batch_size']
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        hamming_loss = get_hamming_loss(y_true, y_pred, self.batch_size)
-        self.hamming_loss.assign_add(hamming_loss)
-        self.num_iter.assign_add(1.0)
+        hamming = tf.math.logical_xor((y_pred >= 0.5), (y_true == 1))
+        hamming = tf.reduce_sum(tf.cast(hamming, dtype=tf.float32))
+        self.hamming_loss.assign_add(hamming)
+        self.num_iter.assign_add(self.batch_size * y_true.shape[1])
 
     def result(self):
         return self.hamming_loss/self.num_iter
